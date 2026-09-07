@@ -1,4 +1,0 @@
-:HL["/_next/static/chunks/1ogg4vaj813_p.css","style"]
-:HL["https://fonts.cdnfonts.com/css/druk-wide-bold","style"]
-:HL["https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,700;6..96,800;6..96,900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"fhZUTSZjvd8pTSj9pJZCn"}
