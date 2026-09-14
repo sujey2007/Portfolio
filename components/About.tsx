@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { Anton } from "next/font/google";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import HeroBackground from "./HeroBackground";
 
 const anton = Anton({ subsets: ["latin"], weight: "400" });
 
@@ -25,6 +26,10 @@ export default function About() {
       className="relative overflow-hidden scroll-mt-8 bg-[#050508] py-16 md:py-24 lg:py-28"
       aria-label="About me"
     >
+      {/* Hero-like cosmic background — same black colour / glows / stars as hero */}
+      <div className="absolute inset-0 z-0">
+        <HeroBackground />
+      </div>
       {/* Background decorative text — scroll-linked right→center→left, disappears off-screen left */}
       <div
         aria-hidden="true"
