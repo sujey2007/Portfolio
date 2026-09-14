@@ -1,11 +1,13 @@
 import Hero from "@/components/Hero";
 import About from "@/components/About";
+import Experience from "@/components/Experience";
 
 export default function Page() {
   return (
     <main className="min-h-screen bg-[#050508]">
       <Hero />
       <About />
+      <Experience />
       {/* Projects anchor — target for "Look My Work" button */}
       <section id="projects" className="relative scroll-mt-6 bg-[#050508] py-24">
         <div className="mx-auto max-w-[1440px] px-5 md:px-8 lg:px-10">

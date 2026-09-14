@@ -118,8 +118,6 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Subtle bottom border glow */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       </motion.div>
     </section>
   );

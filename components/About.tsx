@@ -42,9 +42,9 @@ export default function About() {
           <span
             className={`${anton.className} block whitespace-nowrap text-[28vw] leading-none tracking-[-0.02em] sm:text-[24vw] md:text-[20vw] lg:text-[16vw] xl:text-[14vw]`}
             style={{
-              color: "rgba(255,255,255,0.30)",
-              WebkitTextFillColor: "rgba(255,255,255,0.30)",
-              WebkitTextStroke: "1.6px rgba(255,255,255,1)",
+              color: "transparent",
+              WebkitTextFillColor: "transparent",
+              WebkitTextStroke: "1.4px rgba(220,220,225,0.90)",
               textTransform: "uppercase",
             }}
           >
@@ -52,9 +52,6 @@ export default function About() {
           </span>
         </motion.div>
       </div>
-
-      {/* subtle top divider to separate from Hero */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
       <div className="relative z-10 mx-auto max-w-[1440px] px-5 md:px-8 lg:px-10">
         <div className="grid grid-cols-1 items-center gap-10 md:gap-12 lg:grid-cols-2 lg:gap-12 xl:gap-16">
