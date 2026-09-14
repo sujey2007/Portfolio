@@ -173,7 +173,7 @@ export default function Experience() {
     <section
       ref={sectionRef}
       id="experience"
-      className="relative overflow-hidden scroll-mt-8 bg-[#050508] py-16 md:py-24 lg:py-28"
+      className="relative overflow-hidden scroll-mt-8 bg-[#050508] pt-8 md:pt-12 lg:pt-14 pb-16 md:pb-24 lg:pb-28"
       aria-label="Work Experience"
     >
       {/* Lightweight background for Experience — single subtle glow instead of full HeroBackground (perf: 4x fewer blur layers) */}
@@ -207,9 +207,9 @@ export default function Experience() {
                 className="block text-[18vw] font-black leading-none tracking-[-0.06em] sm:text-[15vw] md:text-[12vw] lg:text-[9vw] xl:text-[8vw]"
                 style={{
                   fontFamily: "'Bodoni MT Black','Bodoni MT','Bodoni Moda',Georgia,serif",
-                  color: "transparent",
-                  WebkitTextFillColor: "transparent",
-                  WebkitTextStroke: "1.4px rgba(220,220,225,0.90)",
+                  color: "#ffffff",
+                  WebkitTextFillColor: "#ffffff",
+                  WebkitTextStroke: "0px transparent",
                   textTransform: "uppercase",
                 }}
               >
@@ -219,9 +219,9 @@ export default function Experience() {
                 className="block text-[18vw] font-black leading-none tracking-[-0.06em] sm:text-[15vw] md:text-[12vw] lg:text-[9vw] xl:text-[8vw]"
                 style={{
                   fontFamily: "'Bodoni MT Black','Bodoni MT','Bodoni Moda',Georgia,serif",
-                  color: "transparent",
-                  WebkitTextFillColor: "transparent",
-                  WebkitTextStroke: "1.4px rgba(220,220,225,0.90)",
+                  color: "#ffffff",
+                  WebkitTextFillColor: "#ffffff",
+                  WebkitTextStroke: "0px transparent",
                   textTransform: "uppercase",
                 }}
               >
@@ -231,9 +231,9 @@ export default function Experience() {
                 className="block text-[18vw] font-black leading-none tracking-[-0.06em] sm:text-[15vw] md:text-[12vw] lg:text-[9vw] xl:text-[8vw]"
                 style={{
                   fontFamily: "'Bodoni MT Black','Bodoni MT','Bodoni Moda',Georgia,serif",
-                  color: "transparent",
-                  WebkitTextFillColor: "transparent",
-                  WebkitTextStroke: "1.4px rgba(220,220,225,0.90)",
+                  color: "#ffffff",
+                  WebkitTextFillColor: "#ffffff",
+                  WebkitTextStroke: "0px transparent",
                   textTransform: "uppercase",
                 }}
               >
@@ -246,9 +246,9 @@ export default function Experience() {
                 className="block text-[18vw] font-black leading-none tracking-[-0.06em] sm:text-[15vw] md:text-[12vw] lg:text-[9vw] xl:text-[8vw]"
                 style={{
                   fontFamily: "'Bodoni MT Black','Bodoni MT','Bodoni Moda',Georgia,serif",
-                  color: "transparent",
-                  WebkitTextFillColor: "transparent",
-                  WebkitTextStroke: "1.4px rgba(220,220,225,0.90)",
+                  color: "#ffffff",
+                  WebkitTextFillColor: "#ffffff",
+                  WebkitTextStroke: "0px transparent",
                   textTransform: "uppercase",
                 }}
               >
@@ -258,9 +258,9 @@ export default function Experience() {
                 className="block text-[18vw] font-black leading-none tracking-[-0.06em] sm:text-[15vw] md:text-[12vw] lg:text-[9vw] xl:text-[8vw]"
                 style={{
                   fontFamily: "'Bodoni MT Black','Bodoni MT','Bodoni Moda',Georgia,serif",
-                  color: "transparent",
-                  WebkitTextFillColor: "transparent",
-                  WebkitTextStroke: "1.4px rgba(220,220,225,0.90)",
+                  color: "#ffffff",
+                  WebkitTextFillColor: "#ffffff",
+                  WebkitTextStroke: "0px transparent",
                   textTransform: "uppercase",
                 }}
               >
@@ -270,9 +270,9 @@ export default function Experience() {
                 className="block text-[18vw] font-black leading-none tracking-[-0.06em] sm:text-[15vw] md:text-[12vw] lg:text-[9vw] xl:text-[8vw]"
                 style={{
                   fontFamily: "'Bodoni MT Black','Bodoni MT','Bodoni Moda',Georgia,serif",
-                  color: "transparent",
-                  WebkitTextFillColor: "transparent",
-                  WebkitTextStroke: "1.4px rgba(220,220,225,0.90)",
+                  color: "#ffffff",
+                  WebkitTextFillColor: "#ffffff",
+                  WebkitTextStroke: "0px transparent",
                   textTransform: "uppercase",
                 }}
               >
@@ -285,13 +285,13 @@ export default function Experience() {
 
       <div className="relative z-10 mx-auto max-w-[1440px] px-5 md:px-8 lg:px-10">
         {/* Header — foreground WORK EXPERIENCE removed; bg poster is the large typography */}
-        <div className="mx-auto max-w-[720px] text-center pt-4">
+        <div className="mx-auto max-w-[720px] text-center pt-8 md:pt-10">
           <motion.p
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.12 }}
-            className="mx-auto mt-6 max-w-[520px] text-[14px] leading-[1.7] text-white/55"
+            className="mx-auto mt-10 max-w-[520px] text-[14px] leading-[1.7] text-white/55"
           >
             A timeline of my professional experience and technical journey.
           </motion.p>

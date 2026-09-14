@@ -19,7 +19,7 @@ export default function About() {
     <section
       ref={ref}
       id="about"
-      className="relative flex min-h-[92svh] items-center overflow-hidden scroll-mt-8 bg-[#050508] py-24 md:py-32 lg:py-36 xl:py-40"
+      className="relative flex min-h-[92svh] items-center overflow-hidden scroll-mt-8 bg-[#050508] pt-32 md:pt-40 lg:pt-44 xl:pt-48 pb-12 md:pb-16 lg:pb-20 xl:pb-20"
       aria-label="About me"
     >
       {/* Lightweight cosmic background — single glow + minimal stars (perf: avoids 4x blur layers vs HeroBackground) */}
@@ -50,9 +50,9 @@ export default function About() {
           <span
             className={`${anton.className} block whitespace-nowrap text-[28vw] leading-none tracking-[-0.02em] sm:text-[24vw] md:text-[20vw] lg:text-[16vw] xl:text-[14vw]`}
             style={{
-              color: "transparent",
-              WebkitTextFillColor: "transparent",
-              WebkitTextStroke: "1.4px rgba(220,220,225,0.90)",
+              color: "rgba(160,160,160,0.20)",
+              WebkitTextFillColor: "rgba(160,160,160,0.20)",
+              WebkitTextStroke: "1.4px rgba(255,255,255,0.90)",
               textTransform: "uppercase",
             }}
           >
@@ -94,20 +94,20 @@ export default function About() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-            className="flex flex-col"
+            className="flex flex-col pt-14 md:pt-16 lg:pt-20"
           >
-            <p className="text-[13.5px] font-black tracking-[0.02em] text-white">
+            <p className="text-[15px] md:text-[17px] lg:text-[18px] font-black tracking-[0.01em] text-white leading-tight">
               Android Developer &nbsp;·&nbsp; Blockchain & Web3 Engineer &nbsp;·&nbsp; AI/ML Enthusiast
             </p>
 
-            <div className="mt-6 space-y-4 text-[14.5px] leading-[1.7] text-white/65">
-              <p>
+            <div className="mt-6 space-y-4 text-[14.5px] leading-[1.7] text-white">
+              <p className="text-white">
                 Computer Science undergraduate at Chennai Institute of Technology with hands-on
                 experience building mobile, blockchain, and AI-driven applications. Currently
                 interning as a Web Developer at DNYX Business Solutions and previously as a Cloud
                 Technical Intern at MulticoreWare.
               </p>
-              <p className="text-white/60">
+              <p className="text-white">
                 Winner of the KAAVAL Hackathon (1st of 400 teams) and Top Finalist at Hack with
                 Uttar Pradesh selected from 20,000+ applicants. Founder of HackHive, a student
                 developer community focused on hackathons, Web3 and Agentic AI, and On-Campus
@@ -119,32 +119,32 @@ export default function About() {
             {/* Key details — compact, premium grid */}
             <div className="mt-8 grid grid-cols-1 gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur sm:grid-cols-2 sm:p-6">
               <div className="space-y-1">
-                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-white">
                   Location
                 </p>
-                <p className="text-[13.5px] font-medium text-white/85">Chennai 600078, India</p>
+                <p className="text-[13.5px] font-medium text-white">Chennai 600078, India</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-white">
                   Education
                 </p>
-                <p className="text-[13.5px] font-medium leading-snug text-white/85">
+                <p className="text-[13.5px] font-medium leading-snug text-white">
                   B.E. CSE, Chennai Institute of Technology — 2025–2029
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-white">
                   Email
                 </p>
                 <a
                   href="mailto:sujeyhariprasad4@gmail.com"
-                  className="text-[13.5px] font-medium text-white/85 underline decoration-white/15 underline-offset-4 hover:decoration-white/30"
+                  className="text-[13.5px] font-medium text-white underline decoration-white/15 underline-offset-4 hover:decoration-white/30"
                 >
                   sujeyhariprasad4@gmail.com
                 </a>
               </div>
               <div className="space-y-1">
-                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-white">
                   Links
                 </p>
                 <div className="flex flex-wrap gap-3 text-[13.5px] font-medium">
@@ -152,7 +152,7 @@ export default function About() {
                     href="https://github.com/sujey2007"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-white/85 underline decoration-white/15 underline-offset-4 hover:text-white hover:decoration-white/30"
+                    className="text-white underline decoration-white/15 underline-offset-4 hover:decoration-white/30"
                   >
                     GitHub
                   </a>
@@ -161,7 +161,7 @@ export default function About() {
                     href="https://linkedin.com/in/sujey-hariprasad"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-white/85 underline decoration-white/15 underline-offset-4 hover:text-white hover:decoration-white/30"
+                    className="text-white underline decoration-white/15 underline-offset-4 hover:text-white hover:decoration-white/30"
                   >
                     LinkedIn
                   </a>

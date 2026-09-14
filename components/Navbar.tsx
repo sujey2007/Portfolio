@@ -9,7 +9,6 @@ const navLinks = [
   { label: "Experience", href: "#experience" },
   { label: "Skills", href: "#skills" },
   { label: "Projects", href: "#projects" },
-  { label: "Impact", href: "#impact" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -18,31 +17,109 @@ export default function Navbar() {
   const [active, setActive] = useState("Home");
 
   useEffect(() => {
-    const ids = navLinks.map((l) => l.href.slice(1));
-    const sections = ids.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
-    if (sections.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find most visible section near top
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible?.target?.id) {
-          const label = navLinks.find((l) => l.href === `#${visible.target.id}`)?.label;
-          if (label) setActive(label);
+    let ticking = false;
+
+    const updateActive = () => {
+      // Trigger line ~30% down viewport, just below fixed header — the section that straddles this line is active.
+      // This correctly handles pinned Projects (500vh tall) — it stops straddling once its bottom passes the line, so Contact can take over.
+      const triggerY = 160; // px below viewport top (header ~60px + 100px buffer)
+      const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 80;
+      if (nearBottom) {
+        setActive("Contact");
+        return;
+      }
+      if (window.scrollY < 80) {
+        setActive("Home");
+        return;
+      }
+      let activeCandidate: string | null = null;
+      // Iterate in DOM order Home->Contact; last one that straddles the line wins, but we check straddle first.
+      // For pinned Projects, its rect will be huge (-2000 to +2000) and will straddle for a long time — that's correct while pinned.
+      // Once Contact wrapper enters and its top crosses triggerY, it will also straddle, but we want the *lowest* section that straddles to win (closest to top).
+      // So we collect all straddling sections and pick the one whose top is closest to triggerY from above.
+      let bestTop = -Infinity;
+      for (const link of navLinks) {
+        const id = link.href.slice(1);
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        const straddles = rect.top <= triggerY && rect.bottom >= triggerY;
+        if (straddles) {
+          // Among straddling sections, pick the one with largest top (closest to trigger line from above)
+          // This ensures when Projects (top -2000) and Contact (top 100) both straddle, Contact wins as it is lower/closer.
+          if (rect.top > bestTop) {
+            bestTop = rect.top;
+            activeCandidate = link.label;
+          }
         }
-      },
-      { rootMargin: "-45% 0px -50% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
-    );
-    sections.forEach((s) => observer.observe(s));
-    // Fallback: scroll handler for top
-    const onScroll = () => {
-      if (window.scrollY < 120) setActive("Home");
+      }
+      // Fallback: if nothing straddles (e.g., between sections), pick last section whose top is above triggerY
+      if (!activeCandidate) {
+        for (const link of navLinks) {
+          const id = link.href.slice(1);
+          const el = document.getElementById(id);
+          if (!el) continue;
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= triggerY) {
+            activeCandidate = link.label;
+          }
+        }
+      }
+      if (activeCandidate) {
+        // Explicitly ensures Projects is deactivated when Contact is active — only one setActive call
+        setActive(activeCandidate);
+      }
     };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateActive();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    // Smooth scroll click should immediately show Contact — handle hash and clicks
+    const onHashChange = () => {
+      const hash = window.location.hash;
+      const label = navLinks.find((l) => l.href === hash)?.label;
+      if (label) setActive(label);
+      // Defer updateActive to after scroll
+      setTimeout(updateActive, 50);
+    };
+    window.addEventListener("hashchange", onHashChange);
+
+    // Also listen for clicks on nav links to immediately set active (avoids stale Projects during smooth scroll)
+    const handleNavClick = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a[href^="#"]') as HTMLAnchorElement | null;
+      if (anchor) {
+        const href = anchor.getAttribute("href");
+        const label = navLinks.find((l) => l.href === href)?.label;
+        if (label) {
+          // Immediately set, then let scroll handler correct if needed
+          setActive(label);
+        }
+      }
+    };
+    document.addEventListener("click", handleNavClick);
+
+    // Initial
+    updateActive();
+    const hash = window.location.hash;
+    if (hash) {
+      const label = navLinks.find((l) => l.href === hash)?.label;
+      if (label) setActive(label);
+    }
     return () => {
-      observer.disconnect();
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("hashchange", onHashChange);
+      document.removeEventListener("click", handleNavClick);
     };
   }, []);
 
