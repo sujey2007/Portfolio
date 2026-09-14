@@ -4,7 +4,6 @@ import { useLayoutEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import HeroBackground from "./HeroBackground";
 
 const experiences = [
   {
@@ -37,55 +36,86 @@ export default function Experience() {
   const sectionRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const pathBgRef = useRef<SVGPathElement>(null);
+  const pathBgMobileRef = useRef<SVGPathElement>(null);
   const pathActiveRef = useRef<SVGPathElement>(null);
   const pathActiveMobileRef = useRef<SVGPathElement>(null);
 
   useLayoutEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
+    // Respect reduced motion
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const ctx = gsap.context(() => {
-      const pathActive = pathActiveRef.current;
-      const pathActiveMobile = pathActiveMobileRef.current;
-      const pathBg = pathBgRef.current;
       const section = sectionRef.current;
-      const container = containerRef.current;
-      if (!pathActive || !pathBg || !section) return;
+      if (!section) return;
 
-      const length = pathActive.getTotalLength();
-      const activePaths: SVGPathElement[] = [pathActive, pathActiveMobile as SVGPathElement].filter(Boolean) as SVGPathElement[];
-      gsap.set([pathBg, ...activePaths], { strokeDasharray: length });
-      gsap.set(activePaths, { strokeDashoffset: length });
-      gsap.set(pathBg, { strokeDashoffset: 0, opacity: 0.14 });
-      // Ensure mobile bg also visible
-      const bgMobile = document.querySelector<SVGPathElement>(".timeline-svg.md\\:hidden path[stroke='currentColor']");
-      if (bgMobile) gsap.set(bgMobile, { strokeDasharray: length, strokeDashoffset: 0, opacity: 0.14 });
+      const bgPaths = [pathBgRef.current, pathBgMobileRef.current].filter(Boolean) as SVGPathElement[];
+      const activePaths = [pathActiveRef.current, pathActiveMobileRef.current].filter(Boolean) as SVGPathElement[];
+      if (activePaths.length === 0) return;
 
-      gsap.to(activePaths, {
-        strokeDashoffset: 0,
-        ease: "none",
-        scrollTrigger: {
-          trigger: section,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 0.8,
-        },
-      });
+      // Proper per-path length setup — fixes line not drawing / offset mismatch on mobile
+      const setupPaths = () => {
+        bgPaths.forEach((p) => {
+          const len = p.getTotalLength();
+          // Use string dasharray for SVG correctness and GPU-friendly style
+          p.style.strokeDasharray = `${len}`;
+          p.style.strokeDashoffset = "0";
+          p.style.opacity = "0.14";
+        });
+        activePaths.forEach((p) => {
+          const len = p.getTotalLength();
+          p.style.strokeDasharray = `${len}`;
+          p.style.strokeDashoffset = `${len}`;
+          p.style.opacity = "1";
+        });
+      };
 
-      // Nodes
+      setupPaths();
+
+      if (!prefersReduced) {
+        // Faster line draw — touches AUG node when its bg lights (AUG node at ~60% path, lights at top 88% ≈ section top 19%)
+        // Shorter range (bottom 100% vs 58% = H-0.22V vs H+0.20V) + low scrub = immediate, line at ~61% when AUG lights vs ~42% before
+        gsap.to(activePaths, {
+          strokeDashoffset: 0,
+          ease: "none",
+          overwrite: "auto",
+          scrollTrigger: {
+            trigger: section,
+            start: "top 78%",
+            end: "bottom 100%",
+            scrub: 0.32,
+            invalidateOnRefresh: true,
+            anticipatePin: 0,
+            fastScrollEnd: true,
+            onRefresh: setupPaths,
+          },
+        });
+      } else {
+        // Reduced motion: show line instantly without scroll scrub
+        activePaths.forEach((p) => (p.style.strokeDashoffset = "0"));
+      }
+
+      // Nodes — use toggleActions instead of scrub (huge perf win, no per-frame updates)
       const nodes = gsap.utils.toArray<HTMLElement>(".timeline-node");
       nodes.forEach((node) => {
+        if (prefersReduced) {
+          node.classList.add("node-active");
+          gsap.set(node, { scale: 1, opacity: 1 });
+          return;
+        }
         gsap.fromTo(
           node,
-          { scale: 0.9, opacity: 0.65 },
+          { scale: 0.92, opacity: 0.65 },
           {
             scale: 1,
             opacity: 1,
+            duration: 0.45,
             ease: "power2.out",
             scrollTrigger: {
               trigger: node,
-              start: "top 82%",
-              end: "top 58%",
-              scrub: 0.6,
+              start: "top 88%",
+              toggleActions: "play none none reverse",
               onEnter: () => node.classList.add("node-active"),
               onLeaveBack: () => node.classList.remove("node-active"),
               onEnterBack: () => node.classList.add("node-active"),
@@ -95,24 +125,29 @@ export default function Experience() {
         );
       });
 
-      // Cards
+      // Cards — entrance without scrub + separate active class toggle (no continuous scrub)
       const items = gsap.utils.toArray<HTMLElement>(".timeline-item");
       items.forEach((item) => {
         const card = item.querySelector<HTMLElement>(".timeline-card");
         if (!card) return;
+        if (prefersReduced) {
+          gsap.set(card, { x: 0, opacity: 1 });
+          card.classList.add("card-active");
+          return;
+        }
         const isLeft = item.classList.contains("item-left");
         gsap.fromTo(
           card,
-          { x: isLeft ? -60 : 60, opacity: 0 },
+          { x: isLeft ? -28 : 28, opacity: 0 },
           {
             x: 0,
             opacity: 1,
+            duration: 0.55,
             ease: "power3.out",
             scrollTrigger: {
               trigger: item,
-              start: "top 86%",
-              end: "top 60%",
-              scrub: 0.9,
+              start: "top 88%",
+              toggleActions: "play none none reverse",
             },
           }
         );
@@ -127,7 +162,8 @@ export default function Experience() {
         });
       });
 
-      ScrollTrigger.refresh();
+      // Refresh once after fonts/images settle, debounced
+      requestAnimationFrame(() => ScrollTrigger.refresh());
     }, sectionRef);
 
     return () => ctx.revert();
@@ -140,8 +176,22 @@ export default function Experience() {
       className="relative overflow-hidden scroll-mt-8 bg-[#050508] py-16 md:py-24 lg:py-28"
       aria-label="Work Experience"
     >
-      <div className="absolute inset-0 z-0">
-        <HeroBackground />
+      {/* Lightweight background for Experience — single subtle glow instead of full HeroBackground (perf: 4x fewer blur layers) */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-[#050508]">
+        <div
+          className="absolute rounded-full blur-[90px] opacity-70"
+          style={{
+            width: "720px",
+            height: "600px",
+            left: "50%",
+            top: "28%",
+            transform: "translateX(-50%)",
+            background: "radial-gradient(ellipse at center, rgba(120,40,200,0.09) 0%, transparent 70%)",
+          }}
+        />
+        <div className="absolute inset-0 opacity-[0.28]" style={{
+          backgroundImage: `radial-gradient(1px 1px at 22% 18%, rgba(255,255,255,0.45) 50%, transparent 51%), radial-gradient(1px 1px at 68% 24%, rgba(255,255,255,0.35) 50%, transparent 51%), radial-gradient(1px 1px at 42% 72%, rgba(255,255,255,0.18) 50%, transparent 51%)`
+        }}/>
       </div>
 
       {/* Background moving poster — WORK EXPERIENCE repeated LEFT → RIGHT, a little upward to subtitle */}
@@ -271,8 +321,9 @@ export default function Experience() {
                 <stop offset="92%" stopColor="#a78bfa" />
                 <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.3" />
               </linearGradient>
-              <filter id="timeline-glow-exp" x="-30%" y="-30%" width="160%" height="160%">
-                <feGaussianBlur stdDeviation="4" result="blur" />
+              {/* Lighter glow — stdDeviation 2.5 vs 4 and smaller region = large perf gain */}
+              <filter id="timeline-glow-exp" x="-20%" y="-10%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
                   <feMergeNode in="SourceGraphic" />
@@ -287,6 +338,7 @@ export default function Experience() {
               className="text-white/10"
               strokeWidth="2.5"
               strokeLinecap="round"
+              style={{ opacity: 0.14 }}
             />
             <path
               ref={pathActiveRef}
@@ -296,6 +348,7 @@ export default function Experience() {
               strokeWidth="3.5"
               strokeLinecap="round"
               filter="url(#timeline-glow-exp)"
+              style={{ willChange: "stroke-dashoffset" }}
             />
           </svg>
 
@@ -309,12 +362,14 @@ export default function Experience() {
             aria-hidden="true"
           >
             <path
+              ref={pathBgMobileRef}
               d={PATH_D}
               fill="none"
               stroke="currentColor"
               className="text-white/10"
               strokeWidth="2.5"
               strokeLinecap="round"
+              style={{ opacity: 0.14 }}
             />
             <path
               ref={pathActiveMobileRef}
@@ -323,7 +378,8 @@ export default function Experience() {
               stroke="url(#timeline-gradient-exp)"
               strokeWidth="3.5"
               strokeLinecap="round"
-              filter="url(#timeline-glow-exp)"
+              // No heavy filter on mobile for perf
+              style={{ willChange: "stroke-dashoffset" }}
             />
           </svg>
 
@@ -335,24 +391,29 @@ export default function Experience() {
           >
             {/* Desktop layout */}
             <div className="hidden w-full items-center justify-between md:flex">
-              <article className="timeline-card group relative flex w-[44%] max-w-[480px] flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a12]/75 p-6 backdrop-blur transition-all duration-500 md:p-7">
-                <div className="pointer-events-none absolute left-0 right-0 top-0 h-[1.5px] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-60 transition-opacity group-[.card-active]:opacity-100" />
-                <div className="pointer-events-none absolute -inset-6 -z-10 bg-gradient-to-br from-purple-500/[0.05] to-cyan-500/[0.05] opacity-0 blur-xl transition-opacity group-[.card-active]:opacity-100" />
+              <article className="timeline-card group relative flex w-[44%] max-w-[480px] flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a12]/75 p-6 backdrop-blur transition-all duration-500 hover:border-white/20 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] md:p-7">
+                {/* Left → right white sweep — hover light turning */}
+                <div className="pointer-events-none absolute inset-0 z-0 translate-x-[-101%] bg-white transition-transform duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:translate-x-0" />
+                <div className="pointer-events-none absolute inset-0 z-[1] -translate-x-full bg-gradient-to-r from-transparent via-white/55 to-transparent opacity-0 transition-all duration-[720ms] ease-out will-change-transform group-hover:translate-x-full group-hover:opacity-100" style={{ transitionDelay: "80ms" }} />
+                <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 h-[1.5px] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-60 transition-opacity group-hover:opacity-0 group-[.card-active]:opacity-100" />
+                <div className="pointer-events-none absolute -inset-6 -z-10 bg-gradient-to-br from-purple-500/[0.05] to-cyan-500/[0.05] opacity-0 blur-xl transition-opacity group-[.card-active]:opacity-100 group-hover:opacity-0" />
                 {/* connector */}
-                <div className="pointer-events-none absolute -right-[32px] top-[48px] hidden h-px w-8 bg-gradient-to-r from-white/10 to-cyan-400/40 md:block" />
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/35">MAY 2026 — JUN 2026</p>
-                <h3 className="mt-2 text-[18px] font-bold leading-tight text-white md:text-[19px]">Cloud Technical Intern</h3>
-                <p className="text-[13.5px] font-medium text-white/55">MulticoreWare</p>
-                <p className="mt-3 text-[13.5px] leading-[1.65] text-white/65">
-                  Worked on cloud and infrastructure-related technical tasks, gaining practical exposure to cloud
-                  technologies, containerized environments, and modern development workflows.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {experiences[1].tags.map((t) => (
-                    <span key={t} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-[11px] font-medium text-white/65">
-                      {t}
-                    </span>
-                  ))}
+                <div className="pointer-events-none absolute -right-[32px] top-[48px] z-10 hidden h-px w-8 bg-gradient-to-r from-white/10 to-cyan-400/40 md:block group-hover:opacity-0" />
+                <div className="relative z-10 flex flex-col">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/35 transition-colors duration-300 group-hover:text-black/45">MAY 2026 — JUN 2026</p>
+                  <h3 className="mt-2 text-[18px] font-bold leading-tight text-white transition-colors duration-300 group-hover:text-[#050508] md:text-[19px]">Cloud Technical Intern</h3>
+                  <p className="text-[13.5px] font-medium text-white/55 transition-colors duration-300 group-hover:text-black/60">MulticoreWare</p>
+                  <p className="mt-3 text-[13.5px] leading-[1.65] text-white/65 transition-colors duration-300 group-hover:text-black/75">
+                    Worked on cloud and infrastructure-related technical tasks, gaining practical exposure to cloud
+                    technologies, containerized environments, and modern development workflows.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {experiences[1].tags.map((t) => (
+                      <span key={t} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-[11px] font-medium text-white/65 transition-colors duration-300 group-hover:border-black/10 group-hover:bg-black/[0.06] group-hover:text-black/70">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </article>
 
@@ -375,21 +436,25 @@ export default function Experience() {
                   <span className="text-[12px] font-black text-white">2026</span>
                 </div>
               </div>
-              <article className="timeline-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a12]/75 p-5 backdrop-blur">
-                <div className="absolute left-0 right-0 top-0 h-[1.5px] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-60" />
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/35">MAY 2026 — JUN 2026</p>
-                <h3 className="mt-2 text-[16px] font-bold text-white">Cloud Technical Intern</h3>
-                <p className="text-[13px] font-medium text-white/55">MulticoreWare</p>
-                <p className="mt-2 text-[13px] leading-[1.6] text-white/65">
-                  Worked on cloud and infrastructure-related technical tasks, gaining practical exposure to cloud
-                  technologies, containerized environments, and modern development workflows.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {experiences[1].tags.map((t) => (
-                    <span key={t} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-white/65">
-                      {t}
-                    </span>
-                  ))}
+              <article className="timeline-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a12]/75 p-5 backdrop-blur transition-colors duration-300 hover:border-white/20">
+                <div className="pointer-events-none absolute inset-0 z-0 translate-x-[-101%] bg-white transition-transform duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:translate-x-0" />
+                <div className="pointer-events-none absolute inset-0 z-[1] -translate-x-full bg-gradient-to-r from-transparent via-white/55 to-transparent opacity-0 transition-all duration-[720ms] ease-out will-change-transform group-hover:translate-x-full group-hover:opacity-100" style={{ transitionDelay: "80ms" }} />
+                <div className="absolute left-0 right-0 top-0 z-10 h-[1.5px] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-60 transition-opacity group-hover:opacity-0" />
+                <div className="relative z-10 flex flex-col">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/35 transition-colors duration-300 group-hover:text-black/45">MAY 2026 — JUN 2026</p>
+                  <h3 className="mt-2 text-[16px] font-bold text-white transition-colors duration-300 group-hover:text-[#050508]">Cloud Technical Intern</h3>
+                  <p className="text-[13px] font-medium text-white/55 transition-colors duration-300 group-hover:text-black/60">MulticoreWare</p>
+                  <p className="mt-2 text-[13px] leading-[1.6] text-white/65 transition-colors duration-300 group-hover:text-black/75">
+                    Worked on cloud and infrastructure-related technical tasks, gaining practical exposure to cloud
+                    technologies, containerized environments, and modern development workflows.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {experiences[1].tags.map((t) => (
+                      <span key={t} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-white/65 transition-colors duration-300 group-hover:border-black/10 group-hover:bg-black/[0.06] group-hover:text-black/70">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </article>
             </div>
@@ -410,23 +475,27 @@ export default function Experience() {
                   <span className="text-[14px] font-black text-white">2026</span>
                 </div>
               </div>
-              <article className="timeline-card group relative flex w-[44%] max-w-[480px] flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a12]/75 p-6 backdrop-blur transition-all duration-500 md:p-7">
-                <div className="pointer-events-none absolute left-0 right-0 top-0 h-[1.5px] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-60 transition-opacity group-[.card-active]:opacity-100" />
-                <div className="pointer-events-none absolute -inset-6 -z-10 bg-gradient-to-br from-purple-500/[0.05] to-cyan-500/[0.05] opacity-0 blur-xl transition-opacity group-[.card-active]:opacity-100" />
-                <div className="pointer-events-none absolute -left-[32px] top-[48px] hidden h-px w-8 bg-gradient-to-l from-white/10 to-purple-500/40 md:block" />
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/35">AUG 2026 — PRESENT</p>
-                <h3 className="mt-2 text-[18px] font-bold leading-tight text-white md:text-[19px]">Web Developer Intern</h3>
-                <p className="text-[13.5px] font-medium text-white/55">DNYX Business Solutions</p>
-                <p className="mt-3 text-[13.5px] leading-[1.65] text-white/65">
-                  Working as a Web Developer Intern, contributing to modern web application development and frontend
-                  implementation while gaining hands-on experience with production development workflows.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {experiences[0].tags.map((t) => (
-                    <span key={t} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-[11px] font-medium text-white/65">
-                      {t}
-                    </span>
-                  ))}
+              <article className="timeline-card group relative flex w-[44%] max-w-[480px] flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a12]/75 p-6 backdrop-blur transition-all duration-500 hover:border-white/20 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] md:p-7">
+                <div className="pointer-events-none absolute inset-0 z-0 translate-x-[-101%] bg-white transition-transform duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:translate-x-0" />
+                <div className="pointer-events-none absolute inset-0 z-[1] -translate-x-full bg-gradient-to-r from-transparent via-white/55 to-transparent opacity-0 transition-all duration-[720ms] ease-out will-change-transform group-hover:translate-x-full group-hover:opacity-100" style={{ transitionDelay: "80ms" }} />
+                <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 h-[1.5px] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-60 transition-opacity group-hover:opacity-0 group-[.card-active]:opacity-100" />
+                <div className="pointer-events-none absolute -inset-6 -z-10 bg-gradient-to-br from-purple-500/[0.05] to-cyan-500/[0.05] opacity-0 blur-xl transition-opacity group-[.card-active]:opacity-100 group-hover:opacity-0" />
+                <div className="pointer-events-none absolute -left-[32px] top-[48px] z-10 hidden h-px w-8 bg-gradient-to-l from-white/10 to-purple-500/40 md:block group-hover:opacity-0" />
+                <div className="relative z-10 flex flex-col">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/35 transition-colors duration-300 group-hover:text-black/45">AUG 2026 — PRESENT</p>
+                  <h3 className="mt-2 text-[18px] font-bold leading-tight text-white transition-colors duration-300 group-hover:text-[#050508] md:text-[19px]">Web Developer Intern</h3>
+                  <p className="text-[13.5px] font-medium text-white/55 transition-colors duration-300 group-hover:text-black/60">DNYX Business Solutions</p>
+                  <p className="mt-3 text-[13.5px] leading-[1.65] text-white/65 transition-colors duration-300 group-hover:text-black/75">
+                    Working as a Web Developer Intern, contributing to modern web application development and frontend
+                    implementation while gaining hands-on experience with production development workflows.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {experiences[0].tags.map((t) => (
+                      <span key={t} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-[11px] font-medium text-white/65 transition-colors duration-300 group-hover:border-black/10 group-hover:bg-black/[0.06] group-hover:text-black/70">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </article>
             </div>
@@ -439,21 +508,25 @@ export default function Experience() {
                   <span className="text-[12px] font-black text-white">2026</span>
                 </div>
               </div>
-              <article className="timeline-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a12]/75 p-5 backdrop-blur">
-                <div className="absolute left-0 right-0 top-0 h-[1.5px] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-60" />
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/35">AUG 2026 — PRESENT</p>
-                <h3 className="mt-2 text-[16px] font-bold text-white">Web Developer Intern</h3>
-                <p className="text-[13px] font-medium text-white/55">DNYX Business Solutions</p>
-                <p className="mt-2 text-[13px] leading-[1.6] text-white/65">
-                  Working as a Web Developer Intern, contributing to modern web application development and frontend
-                  implementation while gaining hands-on experience with production development workflows.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {experiences[0].tags.map((t) => (
-                    <span key={t} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-white/65">
-                      {t}
-                    </span>
-                  ))}
+              <article className="timeline-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a12]/75 p-5 backdrop-blur transition-colors duration-300 hover:border-white/20">
+                <div className="pointer-events-none absolute inset-0 z-0 translate-x-[-101%] bg-white transition-transform duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:translate-x-0" />
+                <div className="pointer-events-none absolute inset-0 z-[1] -translate-x-full bg-gradient-to-r from-transparent via-white/55 to-transparent opacity-0 transition-all duration-[720ms] ease-out will-change-transform group-hover:translate-x-full group-hover:opacity-100" style={{ transitionDelay: "80ms" }} />
+                <div className="absolute left-0 right-0 top-0 z-10 h-[1.5px] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-60 transition-opacity group-hover:opacity-0" />
+                <div className="relative z-10 flex flex-col">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/35 transition-colors duration-300 group-hover:text-black/45">AUG 2026 — PRESENT</p>
+                  <h3 className="mt-2 text-[16px] font-bold text-white transition-colors duration-300 group-hover:text-[#050508]">Web Developer Intern</h3>
+                  <p className="text-[13px] font-medium text-white/55 transition-colors duration-300 group-hover:text-black/60">DNYX Business Solutions</p>
+                  <p className="mt-2 text-[13px] leading-[1.6] text-white/65 transition-colors duration-300 group-hover:text-black/75">
+                    Working as a Web Developer Intern, contributing to modern web application development and frontend
+                    implementation while gaining hands-on experience with production development workflows.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {experiences[0].tags.map((t) => (
+                      <span key={t} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-white/65 transition-colors duration-300 group-hover:border-black/10 group-hover:bg-black/[0.06] group-hover:text-black/70">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </article>
             </div>

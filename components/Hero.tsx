@@ -3,7 +3,6 @@
 import HeroBackground from "./HeroBackground";
 import LargeTypography from "./LargeTypography";
 import HeroPortrait from "./HeroPortrait";
-import Navbar from "./Navbar";
 import TypewriterText from "./TypewriterText";
 import { motion } from "framer-motion";
 
@@ -16,9 +15,6 @@ export default function Hero() {
     >
       {/* Layer 1: Cosmic background */}
       <HeroBackground />
-
-      {/* Layer 4: Navbar (on top) - rendered early for layout but absolute positioned */}
-      <Navbar />
 
       {/* Layer 2: Giant typography behind portrait */}
       <LargeTypography />

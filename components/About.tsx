@@ -2,8 +2,7 @@
 
 import { useRef } from "react";
 import { Anton } from "next/font/google";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
-import HeroBackground from "./HeroBackground";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 const anton = Anton({ subsets: ["latin"], weight: "400" });
 
@@ -13,22 +12,31 @@ export default function About() {
     target: ref,
     offset: ["start end", "end start"],
   });
-  // Scroll-linked: off-screen right → center (when About is centered) → off-screen left
-  // 0 = section below viewport → hidden right, 0.5 = section centered → 0 (visible center), 1 = section above → hidden left
-  const rawX = useTransform(scrollYProgress, [0, 1], ["75vw", "-75vw"]);
-  // Fast scrub matching inspiration translate3d(82.67px): high stiffness for quick right→left
-  const x = useSpring(rawX, { stiffness: 140, damping: 20, mass: 0.5 });
+  // Scroll-linked: off-screen right → center → off-screen left. Direct transform (no spring) for perf — spring caused per-frame physics
+  const x = useTransform(scrollYProgress, [0, 1], ["75vw", "-75vw"]);
 
   return (
     <section
       ref={ref}
       id="about"
-      className="relative overflow-hidden scroll-mt-8 bg-[#050508] py-16 md:py-24 lg:py-28"
+      className="relative flex min-h-[92svh] items-center overflow-hidden scroll-mt-8 bg-[#050508] py-24 md:py-32 lg:py-36 xl:py-40"
       aria-label="About me"
     >
-      {/* Hero-like cosmic background — same black colour / glows / stars as hero */}
-      <div className="absolute inset-0 z-0">
-        <HeroBackground />
+      {/* Lightweight cosmic background — single glow + minimal stars (perf: avoids 4x blur layers vs HeroBackground) */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-[#050508]">
+        <div
+          className="absolute rounded-full blur-[80px] opacity-60"
+          style={{
+            width: "680px",
+            height: "560px",
+            left: "18%",
+            top: "22%",
+            background: "radial-gradient(ellipse at center, rgba(120,40,200,0.12) 0%, transparent 70%)",
+          }}
+        />
+        <div className="absolute inset-0 opacity-[0.32]" style={{
+          backgroundImage: `radial-gradient(1px 1px at 22% 28%, rgba(255,255,255,0.5) 50%, transparent 51%), radial-gradient(1px 1px at 68% 22%, rgba(255,255,255,0.35) 50%, transparent 51%), radial-gradient(1px 1px at 42% 78%, rgba(255,255,255,0.18) 50%, transparent 51%)`
+        }}/>
       </div>
       {/* Background decorative text — scroll-linked right→center→left, disappears off-screen left */}
       <div
