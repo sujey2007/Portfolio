@@ -9,7 +9,7 @@ export default function LargeTypography() {
       className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden pointer-events-none select-none"
     >
       {/* Vertically centered stack - editorial poster with gap */}
-      <div className="flex flex-col items-center w-full -translate-y-[2vh] gap-[0.34em]">
+      <div className="flex flex-col items-center w-full -translate-y-[6vh] gap-[0.34em]">
         {/* Row 1 - SUJEY - Bodoni MT Black */}
         <motion.div
           initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
